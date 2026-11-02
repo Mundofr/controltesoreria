@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>I.E.I. Rayito de Luz - Control de Tesorería</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="toast-container"></div>
+
+<!-- MODAL PRO DE ADMINISTRADOR -->
+<div id="adminModal">
+  <div class="modal-card">
+    <h3>🔐 Acceso de Administrador</h3>
+    <p>Ingresa la contraseña para desbloquear el sistema y realizar operaciones de gestión.</p>
+    <div style="margin-bottom: 14px;">
+      <label for="adminPassInput">Contraseña</label>
+      <input id="adminPassInput" type="password" placeholder="••••••••">
+    </div>
+    <div style="display: flex; gap: 8px; justify-content: flex-end;">
+      <button class="ghost" id="cancelModalBtn">Cancelar</button>
+      <button id="confirmModalBtn">Ingresar</button>
+    </div>
+  </div>
+</div>
+
+<header>
+  <div class="header-wrap">
+    <div class="header-title">
+      <h1>🌟 I.E.I. Rayito de Luz</h1>
+      <p>Control de Tesorería Escolar (Auxiliar y Copias)</p>
+    </div>
+    <div class="admin-badge" id="openModalBadge">
+      <span id="adminStatusLabel">Modo Lectura 🔒</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+<section class="stats">
+ <div class="stat"><small>Estudiantes / Padres</small><strong id="sMembers">0</strong></div>
+ <div class="stat"><small>Total Recaudado (General)</small><strong id="sPaid">S/ 0.00</strong></div>
+ <div class="stat"><small>Pago Auxiliar</small><strong id="sAuxPaid">S/ 0.00</strong></div>
+ <div class="stat"><small>Pago Copias</small><strong id="sCopPaid">S/ 0.00</strong></div>
+ <div class="stat"><small>Deuda Total</small><strong id="sDebt">S/ 0.00</strong></div>
+ <div class="stat"><small>Cuotas Pendientes</small><strong id="sPending">0</strong></div>
+</section>
+
+<div class="grid">
+<!-- CONFIGURACIÓN COLAPSABLE -->
+<section class="panel locked-section" id="configPanel">
+<div class="panel-header">
+  <h2>⚙️ Configuración del Colegio</h2>
+  <button class="secondary" id="toggleConfigBtn" style="padding: 6px 12px; font-size: 11px;">Ocultar 🔼</button>
+</div>
+<div id="configContent">
+  <div class="fields">
+   <div><label for="teacherName">Nombre de la Miss</label><input id="teacherName" placeholder="Ej. Ana María"></div>
+   <div><label for="assistantName">Nombre de la Auxiliar</label><input id="assistantName" placeholder="Ej. Rosa Gómez"></div>
+   <div><label for="fee">Cuota Auxiliar (S/)</label><input id="fee" type="number" min="0" step=".01" placeholder="Ej. 30"></div>
+   <div><label for="feeCopias">Cuota Copias (S/)</label><input id="feeCopias" type="number" min="0" step=".01" placeholder="Ej. 5"></div>
+   <div style="grid-column:1/-1"><label for="startMonth">Inicio de Control</label><input id="startMonth" type="month"></div>
+  </div>
+  <div class="actions"><button id="saveConfig">Guardar Configuración</button></div>
+  <p class="hint">Al guardar, esta sección se contraerá automáticamente.</p>
+</div>
+</section>
+
+<!-- REGISTRAR ALUMNO (BLOQUEADO SI NO ES ADMIN) -->
+<section class="panel locked-section" id="personPanel">
+<div class="panel-header"><h2>＋ Registrar Alumno / Integrante</h2></div>
+<div class="fields">
+ <div style="grid-column:1/-1"><label for="personName">Nombre completo del Alumno / Padre</label><input id="personName" maxlength="80" placeholder="Ej. Mateo Pérez"></div>
+</div>
+<div class="actions"><button id="addPerson">Agregar Integrante</button></div>
+</section>
+</div>
+
+<!-- REGISTRAR PAGO (BLOQUEADO SI NO ES ADMIN) -->
+<section class="panel locked-section" id="paymentPanel">
+<div class="panel-header"><h2>💳 Registrar Nuevo Pago</h2></div>
+<div class="fields">
+ <div><label for="payPerson">Integrante</label><select id="payPerson"><option value="">Selecciona una persona</option></select></div>
+ <div>
+   <label for="payType">Concepto de Pago</label>
+   <select id="payType">
+     <option value="both">Ambos (Auxiliar + Copias)</option>
+     <option value="auxiliar">Solo Auxiliar</option>
+     <option value="copias">Solo Copias</option>
+   </select>
+ </div>
+ <div><label for="payMonth">Mes abonado</label><input id="payMonth" type="month"></div>
+ <div><label for="payAmount">Monto recibido (S/)</label><input id="payAmount" type="number" min=".01" step=".01" placeholder="Ej. 35.00"></div>
+ <div style="grid-column:1/-1"><label for="payNote">Nota u Observación (Opcional)</label><input id="payNote" maxlength="100" placeholder="Ej. Efectivo / Voucher"></div>
+</div>
+<div class="actions"><button id="addPayment">Guardar Pago</button></div>
+</section>
+
+<!-- PANEL ESTADO DE CUOTAS -->
+<section class="panel" id="printStatusSection">
+<div class="print-header-block" id="printStatusHeader">
+  <h1>I.E.I. RAYITO DE LUZ</h1>
+  <h3>REPORTE GENERAL DE ESTADO DE CUOTAS Y DEUDAS</h3>
+  <p id="printStatusStaffInfo"></p>
+  <p id="printStatusSubTitle"></p>
+</div>
+
+<div class="panel-header"><h2>📊 Estado General de Cuotas</h2></div>
+<div class="toolbar">
+ <div><label for="viewMonth">Situación evaluada hasta:</label><input id="viewMonth" type="month"></div>
+ <div><label for="filter">Buscar nombre:</label><input id="filter" placeholder="Escribe un nombre..."></div>
+ <div style="flex:0 0 auto; display:flex; gap:8px;">
+   <button class="secondary" id="refresh">Actualizar</button>
+   <button class="print-btn" id="printStatusPdfBtn">🖨️ Imprimir Estado</button>
+ </div>
+</div>
+
+<div class="table-wrap" style="margin-top:15px"><table>
+<thead><tr><th>Integrante</th><th>Auxiliar Pagado</th><th>Debe Auxiliar</th><th>Copias Pagado</th><th>Debe Copias</th><th>Estado Global</th><th class="no-print">Acción</th></tr></thead>
+<tbody id="statusBody"></tbody>
+</table></div>
+</section>
+
+<!-- PANEL HISTORIAL DE PAGOS -->
+<section class="panel" id="printHistorySection">
+<div class="print-header-block" id="printHistoryHeader">
+  <h1>I.E.I. RAYITO DE LUZ</h1>
+  <h3>HISTORIAL GENERAL DE TRANSACCIONES Y PAGOS REGISTRADOS</h3>
+  <p id="printHistoryStaffInfo"></p>
+  <p id="printHistorySubTitle"></p>
+</div>
+
+<div class="panel-header">
+  <h2>📜 Historial Transaccional de Pagos</h2>
+  <button class="print-btn" id="printHistoryPdfBtn">🖨️ Imprimir Historial de Pagos</button>
+</div>
+
+<div class="table-wrap"><table>
+<thead><tr><th>Fecha / Hora</th><th>Integrante</th><th>Concepto</th><th>Mes Abonado</th><th>Monto</th><th>Nota</th><th class="no-print">Acción</th></tr></thead>
+<tbody id="historyBody"></tbody>
+</table></div>
+</section>
+
+<section class="panel">
+<div class="panel-header"><h2>💾 Respaldo y Gestión de Datos</h2></div>
+<div class="actions">
+<button class="secondary" id="exportBtn">Exportar Respaldo (JSON)</button>
+<button class="ghost" id="csvBtn">Descargar Reporte CSV</button>
+<button class="danger" id="clearBtn">Borrar Datos del Sistema</button>
+</div>
+</section>
+
+</main>
+
+<script src="script.js"></script>
+</body>
+</html>
